@@ -27,7 +27,7 @@ I choose `The Burning Secret` as the my text analysis. This book was written by 
 # gutenberg_works(str_detect(author, "Zweig"))
 
 my_book=gutenberg_download(c(33111))
-# write.table(my_book,'Book.txt',row.names = F)
+write.table(my_book,'Book2.txt',row.names = F)
 
 ```
 
@@ -43,7 +43,7 @@ source("Book2TN-v6A-1.R")
 
 ```{r}
 #mybook<-read_lines('testbook.txt')
-# mybook<-read.table('Book.txt')
+mybook<-read.table('Book2.txt')
 #tnBooksFromLines(mybook$text, "Zweig/test2")
 ```
 
@@ -173,13 +173,13 @@ knitr::kable(df24 %>% select(subject:numeric.value)%>% head())
 
 
 ```{r echo=T}
-q26 <- tnum.query('hssb/book1# has text',max=60)
+q26 <- tnum.query('hvdsb/book4# has text',max=60)
 df26 <- tnum.objectsToDf(q26)
 df26 %>% select(subject:string.value)%>% head()
 ```
 
 ```{r}
-# tnBooksFromLines(my_book$text, "hssb/book1")
+# tnBooksFromLines(mybook$V2, "hvdsb/book4")
 # q20<-tnum.query(query="zweig/test1# has *",max=100000)
 # df20 <- tnum.objectsToDf(q20)
 # df20 %>% view()
@@ -191,7 +191,7 @@ df26 %>% select(subject:string.value)%>% head()
 
 
 ```{r}
-df27<- tnum.query('hssb/book1/section# has text',max=7000) %>% tnum.objectsToDf()
+df27<- tnum.query('hvdsb/book4/section# has text',max=7000) %>% tnum.objectsToDf()
 #df27 %>% view()
 book_sentence<-df27 %>% separate(col=subject,
                   into = c("path1", "path2","section","paragraph","sentence"), 
