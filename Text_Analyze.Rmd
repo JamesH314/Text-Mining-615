@@ -1,5 +1,5 @@
 ---
-title: "MA615 Text Mining"
+title: "MA615 Text Mining Task II Report"
 author: "Yifeng He"
 date: "2021/12/05"
 output: pdf_document
@@ -17,9 +17,9 @@ sentimentr
 )
 ```
 
-## Task 1 Pick a book
+## Task I Book Choice
 
-I choose `The Burning Secret` as the my text analysis. This book was written by Zweug, Stefan.
+The book I chose is 'The Origin of The Family, Private Property and the State' by Friedrich Engles.
 
 ```{r}
 
@@ -38,18 +38,13 @@ tnum.setSpace("test2")
 source("Book2TN-v6A-1.R")
 ```
 
-
-
-
 ```{r}
-#mybook<-read_lines('testbook.txt')
 mybook<-read.table('Book2.txt')
-#tnBooksFromLines(mybook$text, "Zweig/test2")
 ```
 
-## TASK 2 bag of word analysis
+## TASK II
 
-First, I use three types of sentiment analysis methods AFINN, Bing and NRC to plot barplot to compare these methods. From the graph below, the AFINN and Bing method fits better. Most of the polt in `The Burning Secret` is in negative. In this book, While being treated for asthma at a country spa, an American diplomat's lonely 12-year-old son is befriended and infatuated by a suave, mysterious baron. But soon his adored friend heartlessly brushes him aside and turns his seductive attentions to his mother. The boy's jealousy and feelings of betrayal become uncontrollable. The story is set in Austria in the 1920s. That is to say, at the beginning of the book, the sentiment of the book is positive, but soon it converts into negative sentiment. However, it is difficult to identify which of the two methods is better. In the following task, I use Bing method to conduct further analysis.
+
 
 ```{r}
 #my_book=mybook
@@ -99,7 +94,7 @@ bing_and_nrc <- bind_rows(
 ```
 
 ```{r fig.cap="sentiment plot"}
-#
+#form the book
 bind_rows(afinn, 
           bing_and_nrc) %>%
   ggplot(aes(index, sentiment, fill = method)) +
@@ -109,13 +104,14 @@ bind_rows(afinn,
 ```
 
 ```{r}
+#from the book
 bing_word_counts <- tidy_books %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
 ```
 
-```{r fig.width=6, fig.height=2,fig.cap="negative positive words count"}
+```{r fig.cap="negative positive words count"}
 bing_word_counts %>%
   group_by(sentiment) %>%
   slice_max(n, n = 10) %>% 
@@ -129,10 +125,9 @@ bing_word_counts %>%
   theme_bw()
 ```
 
-Figure 2 shows negative and positive word count of each word. For the negative chart, dark is the most common words throughout the whole book. Hate and darkness rank the second and third place respectively. For the positive chart, like is the most common words throughout the whole book. Great and good rank the second and third place respectively.
 
 
-```{r fig.width=6, fig.height=4,fig.cap='word cloud'}
+```{r fig.cap='word cloud'}
 library(wordcloud)
 
 tidy_books %>%
@@ -141,10 +136,9 @@ tidy_books %>%
   with(wordcloud(word, n, max.words = 100))
 ```
 
-Figure 3 displays word cloud which shows the frequency. As we can see, baron, mother, edgar are the most frequency words among all the words. It is reasonable because they are the main characters in that fiction book. In task 3, I will use two of three characters to conduct further analysis.
 
 
-```{r fig.width=6, fig.height=4,fig.cap="sentiment word cloud"}
+```{r fig.cap="sentiment word cloud"}
 #
 library(reshape2)
 tidy_books %>%
@@ -155,59 +149,64 @@ tidy_books %>%
                    max.words = 100)
 ```
 
-Figure 4 generally converts Figure 2's information into word cloud  
 
-## task 3 sentence-level analysis
+## TASK III
 
 ### tnum
 
-First, I put the book into tnum, the following table shows evidence of my tnum database.
+First I put the book into the tnum database.
+	
+```{r}
+#upload the book
+# tnBooksFromLines(mybook$V2, "hvdsb/book4")
+```
 
+```{r}
+sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
+engles_sent<-sb12 %>% separate(col=subject,
+                  into = c("path1", "path2","section","paragraph","sentence"),
+                  sep = "/",
+                  fill = "right") %>%
+  select(section:string.value)
+
+#change the string values of 0001 to 1, to simple numeric values
+engles_sent<-engles_sent %>% mutate_at(c('section','paragraph','sentence'),~str_extract_all(.,"\\d+") %>% unlist() %>% as.numeric())
+
+#get from the sentimentr github
+engles_result<-engles_sent %>% dplyr::mutate(sentence_split = get_sentences(string.value))%$%
+    sentiment_by(sentence_split, list(section))
+
+#the sentiment analysis graph of the the book rank from high to low
+plot(engles_result)
+
+#the emotional curve for the book
+plot(uncombine(engles_result))
+```
+
+### Comparison with TASK II
 
 
 ```{r}
-# sb12<- tnum.query('hvdsb/book4/section# has text',max=7000) %>% tnum.objectsToDf()
-# book_sentence<-sb12 %>% separate(col=subject,
-#                   into = c("path1", "path2","section","paragraph","sentence"), 
-#                   sep = "/", 
-#                   fill = "right") %>% 
-#   select(section:string.value)
-# 
-# book_sentence<-book_sentence %>% mutate_at(c('section','paragraph','sentence'),~str_extract_all(.,"\\d+") %>% unlist() %>% as.numeric())
-# 
-# sentence_out<-book_sentence %>% dplyr::mutate(sentence_split = get_sentences(string.value))%$%
-#     sentiment_by(sentence_split, list(section))
-# 
-# plot(sentence_out)
-
-```
-
-### Compare this analysis with the analysis you did in Task TWO
-
-It is difficult to directly compare Sentimentr and Bing's score. Therefore, I apply `scale` function to keep two variable into the same criteria. Then I use ggplot to plot bar plot. From the Figure below, we can see that the trends, say positive and negetive direction, are mainly similar. But the exact number differs from two methods. Generally, sentimentr package is more optimictic than Bing method. 
-
-```{r fig.cap="sentiment comparison"}
+#Change from task two "divided by 80" to by chapters.
 new_bing<-tidy_books %>% 
     inner_join(get_sentiments("bing")) %>%
     mutate(method = "Bing et al.") %>%
     count(method, index = chapter, sentiment) %>%
-  pivot_wider(names_from = sentiment,
-              values_from = n,
-              values_fill = 0) %>% 
-  mutate(sentiment = positive - negative)
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% mutate(sentiment = positive - negative)
 
 
+#standardize the scale of sentiment for task 2 and task 3 for comparison
+bing2_rep<-new_bing %>% mutate(engles_scale=scale(sentiment)) %>% select(method,index,engles_scale)
+colnames(bing2_rep)[2]='section'
 
-new_bing2<-new_bing %>% mutate(bing_scale=scale(sentiment)) %>% select(method,index,bing_scale)
-colnames(new_bing2)[2]='section'
+engles_result<-engles_result %>% mutate(sentimentr_scale=scale(ave_sentiment))
 
-sentence_out<-sentence_out %>% mutate(sentimentr_scale=scale(ave_sentiment))
+#join together two tasks into one data frame
+engles_res_2<-left_join(engles_result,bing2_rep,by='section')%>% select(section,engles_scale,sentimentr_scale)
+engles_res_plot<-engles_res_2 %>% pivot_longer(cols=c('sentimentr_scale','engles_scale'),names_to = 'sentiment')
 
-
-sentence_out_2method<-left_join(sentence_out,new_bing2,by='section')%>% select(section,bing_scale,sentimentr_scale)
-sentence_out_2method_plot<-sentence_out_2method %>% pivot_longer(cols=c('sentimentr_scale','bing_scale'),names_to = 'sentiment')
-
-sentence_out_2method_plot %>%ggplot(aes(y=value,x=factor(section))) +
+#the graph for comparison
+engles_res_plot %>%ggplot(aes(y=value,x=factor(section))) +
   geom_bar(aes(fill=factor(sentiment)),stat='identity',position = "dodge",width = 0.7)+theme_bw()
 
 ```
