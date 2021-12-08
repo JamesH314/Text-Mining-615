@@ -1,7 +1,7 @@
 ---
 title: "MA615 Text Mining Task II Report"
 author: "Yifeng He"
-date: "2021/12/05"
+date: "2021/12/07"
 output: pdf_document
 ---
 
@@ -58,7 +58,7 @@ engles_book <- my_book %>%
 ```
 
 
-```{r}
+```{r message=FALSE}
 afinn <- engles_book %>% 
   inner_join(get_sentiments("afinn")) %>% 
   group_by(index = linenumber %/% 80) %>% 
@@ -92,7 +92,7 @@ bing_and_nrc <- bind_rows(
   mutate(sentiment = positive - negative)
 ```
 
-```{r fig.cap="sentiment plot"}
+```{r fig.cap="sentiment plot", message=FALSE}
 #form the book
 bind_rows(afinn, 
           bing_and_nrc) %>%
@@ -110,7 +110,7 @@ bing_word_counts <- engles_book %>%
   ungroup()
 ```
 
-```{r fig.cap="nega-posi words count"}
+```{r fig.cap="nega-posi words count", message=FALSE}
 bing_word_counts %>%
   group_by(sentiment) %>%
   slice_max(n, n = 10) %>% 
@@ -126,7 +126,7 @@ bing_word_counts %>%
 
 
 
-```{r fig.cap='Word Cloud Graph'}
+```{r fig.cap='Word Cloud Graph', message=FALSE}
 library(wordcloud)
 
 engles_book %>%
@@ -137,7 +137,7 @@ engles_book %>%
 
 
 
-```{r fig.cap="sentiment word cloud"}
+```{r fig.cap="sentiment word cloud", message=FALSE}
 #
 library(reshape2)
 engles_book %>%
@@ -148,11 +148,13 @@ engles_book %>%
                    max.words = 120)
 ```
 
-This is the part for extra credit:
+\newpage
+
+### This is the part for extra credit:
 
 ```{r}
 #another method for sentiment analysis
-FE<-tidy_books %>% 
+FE<-engles_book %>% 
     inner_join(get_sentiments("loughran")) %>%
     mutate(method = "Loughran-McDonald")  %>% 
   count(method, index = linenumber %/% 80, sentiment) %>% 
@@ -169,65 +171,4 @@ FE%>%ggplot(aes(index, sentiment, fill = method)) +
 
 
 
-
-## TASK III
-
-### tnum
-
-First I put the book into the tnum database.
-	
-```{r}
-#upload the book
-# tnBooksFromLines(mybook$V2, "hvdsb/book4")
-```
-
-```{r}
-sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
-engles_sent<-sb12 %>% separate(col=subject,
-                  into = c("path1", "path2","section","paragraph","sentence"),
-                  sep = "/",
-                  fill = "right") %>%
-  select(section:string.value)
-
-#change the string values of 0001 to 1, to simple numeric values
-engles_sent<-engles_sent %>% mutate_at(c('section','paragraph','sentence'),~str_extract_all(.,"\\d+") %>% unlist() %>% as.numeric())
-
-#get from the sentimentr github
-engles_result<-engles_sent %>% dplyr::mutate(sentence_split = get_sentences(string.value))%$%
-    sentiment_by(sentence_split, list(section))
-
-#the sentiment analysis graph of the the book rank from high to low
-plot(engles_result)
-
-#the emotional curve for the book
-plot(uncombine(engles_result))
-```
-
-### Comparison with TASK II
-
-
-```{r}
-#Change from task two "divided by 80" to by chapters.
-new_bing<-engles_book %>% 
-    inner_join(get_sentiments("bing")) %>%
-    mutate(method = "Bing et al.") %>%
-    count(method, index = chapter, sentiment) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% mutate(sentiment = positive - negative)
-
-
-#standardize the scale of sentiment for task 2 and task 3 for comparison
-bing2_rep<-new_bing %>% mutate(engles_scale=scale(sentiment)) %>% select(method,index,engles_scale)
-colnames(bing2_rep)[2]='section'
-
-engles_result<-engles_result %>% mutate(sentimentr_scale=scale(ave_sentiment))
-
-#join together two tasks into one data frame
-engles_res_2<-left_join(engles_result,bing2_rep,by='section')%>% select(section,engles_scale,sentimentr_scale)
-engles_res_plot<-engles_res_2 %>% pivot_longer(cols=c('sentimentr_scale','engles_scale'),names_to = 'sentiment')
-
-#the graph for comparison
-engles_res_plot %>%ggplot(aes(y=value,x=factor(section))) +
-  geom_bar(aes(fill=factor(sentiment)),stat='identity',position = "dodge",width = 0.7)+theme_bw()
-
-```
 
