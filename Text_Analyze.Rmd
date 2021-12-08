@@ -46,6 +46,8 @@ The content for this book is about early human history and reveal the destructio
 
 As shown in the below code chunks and graphs, more positive words appear in the book than negative ones. However, in some chapters, Engles talks about the dissemble of nations and the situation of slaves. These result in the increase of negative words and the downward bars in the sentiment analysis. 
 
+The code I use refer to Jin Yuli's code. But I made some major changes to his code so that the graphs are visually adaptable to my book. The code is also simplified.
+
 ```{r}
 #my_book=mybook
 engles_book <- my_book %>%

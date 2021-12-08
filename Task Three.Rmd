@@ -17,6 +17,58 @@ sentimentr
 )
 ```
 
+```{r}
+library(tnum)
+tnum.authorize("mssp1.bu.edu")
+tnum.setSpace("test2")
+source("Book2TN-v6A-1.R")
+```
+
+```{r message=FALSE}
+mybook<-read.table('Book2.txt')
+
+engles_book <- my_book %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  unnest_tokens(word, text)
+
+afinn <- engles_book %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+afinn <- engles_book %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc <- bind_rows(
+  engles_book %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  engles_book %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+bing_word_counts <- engles_book %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+```
+
 
 ## TASK III
 
@@ -29,7 +81,7 @@ First I put the book into the tnum database.
 # tnBooksFromLines(mybook$V2, "hvdsb/book4")
 ```
 
-```{r}
+```{r message=FALSE}
 sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
 engles_sent<-sb12 %>% separate(col=subject,
                   into = c("path1", "path2","section","paragraph","sentence"),
@@ -51,10 +103,13 @@ plot(engles_result)
 plot(uncombine(engles_result))
 ```
 
+\newpage
+
 ### Comparison with TASK II
 
 
-```{r}
+
+```{r message=FALSE}
 #Change from task two "divided by 80" to by chapters.
 new_bing<-engles_book %>% 
     inner_join(get_sentiments("bing")) %>%
