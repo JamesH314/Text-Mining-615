@@ -45,13 +45,16 @@ engles_book <- my_book %>%
 ### tnum
 
 First I put the book into the tnum database.
+
 	
 ```{r}
 #upload the book
 # tnBooksFromLines(mybook$V2, "hvdsb/book4")
 ```
 
+### Rescaling of two tasks
 
+Then I get the uploaded book from tnum using the query function. Since the sentiment analysis for task two and three are different, I have to scale the two data frames so that they can be compared together. I also plot the sentiment analysis and the emotional curve for the book.
 
 ```{r message=FALSE}
 sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
@@ -79,7 +82,7 @@ plot(uncombine(engles_result))
 
 ### Comparison with TASK II
 
-
+Here I put two tasks together and compare them. The graph shows that the trends for positive and negative sentiments from two analyzing tasks are the same. However, in chapter 2, 3, 7, the analysis from task three show stronger sentiment than the previous analysis. Other chapters show the opposite effects. This may because of the different methods and standards that the two methods used.
 
 ```{r message=FALSE}
 #Change from task two "divided by 80" to by chapters.
