@@ -44,7 +44,7 @@ engles_book <- my_book %>%
 
 ### tnum
 
-First I put the book into the tnum database.
+First I put the book into the tnum database. For task three, I referred to the work did by Jin Yuli and I made some adjustments to fit my own book.
 
 	
 ```{r}
@@ -54,7 +54,7 @@ First I put the book into the tnum database.
 
 ### Rescaling of two tasks
 
-Then I get the uploaded book from tnum using the query function. Since the sentiment analysis for task two and three are different, I have to scale the two data frames so that they can be compared together. I also plot the sentiment analysis and the emotional curve for the book.
+Then I get the uploaded book from tnum using the query function. Since the sentiment analysis for task two and three are different, I have to scale the two data frames so that they can be compared together. I also plot the sentiment analysis and the emotional curve for the book. 
 
 ```{r message=FALSE}
 sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
