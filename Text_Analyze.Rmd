@@ -22,10 +22,6 @@ sentimentr
 The book I chose is 'The Origin of The Family, Private Property and the State' by Friedrich Engles.
 
 ```{r}
-
-# gutenberg_metadata
-# gutenberg_works(str_detect(author, "Zweig"))
-
 my_book=gutenberg_download(c(33111))
 write.table(my_book,'Book2.txt',row.names = F)
 
@@ -44,11 +40,15 @@ mybook<-read.table('Book2.txt')
 
 ## TASK II
 
+In this task, I will first use three methods to analyze 'The Origin of The Family, Private Property and the State'. The sentiment analysis includes "AFINN", "BING", "NRC". For the extra credit, I will use "Loughran-McDonald" for another sentiment analysis. 
 
+The content for this book is about early human history and reveal the destruction of old social rules; the development of new society based on private property. Engles first discusses the development of family, from blood-related family to monogamy family. Then he talks about the foundation of Germany and Rome; next he states specialization and social class and the start and end of countries. Engles discussed marriage, slaves, social progress, and human rights. As a result, more positive words appear in the book than negative words. 
+
+As shown in the below code chunks and graphs, more positive words appear in the book than negative ones. However, in some chapters, Engles talks about the dissemble of nations and the situation of slaves. These result in the increase of negative words and the downward bars in the sentiment analysis. 
 
 ```{r}
 #my_book=mybook
-tidy_books <- my_book %>%
+engles_book <- my_book %>%
   mutate(
     linenumber = row_number(),
     chapter = cumsum(str_detect(text, 
@@ -59,28 +59,27 @@ tidy_books <- my_book %>%
 
 
 ```{r}
-afinn <- tidy_books %>% 
+afinn <- engles_book %>% 
   inner_join(get_sentiments("afinn")) %>% 
   group_by(index = linenumber %/% 80) %>% 
   summarise(sentiment = sum(value)) %>% 
   mutate(method = "AFINN")
-
 ```
 
 
 
 ```{r}
-afinn <- tidy_books %>% 
+afinn <- engles_book %>% 
   inner_join(get_sentiments("afinn")) %>% 
   group_by(index = linenumber %/% 80) %>% 
   summarise(sentiment = sum(value)) %>% 
   mutate(method = "AFINN")
 
 bing_and_nrc <- bind_rows(
-  tidy_books %>% 
+  engles_book %>% 
     inner_join(get_sentiments("bing")) %>%
     mutate(method = "Bing et al."),
-  tidy_books %>% 
+  engles_book %>% 
     inner_join(get_sentiments("nrc") %>% 
                  filter(sentiment %in% c("positive", 
                                          "negative"))
@@ -105,13 +104,13 @@ bind_rows(afinn,
 
 ```{r}
 #from the book
-bing_word_counts <- tidy_books %>%
+bing_word_counts <- engles_book %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
 ```
 
-```{r fig.cap="negative positive words count"}
+```{r fig.cap="nega-posi words count"}
 bing_word_counts %>%
   group_by(sentiment) %>%
   slice_max(n, n = 10) %>% 
@@ -127,10 +126,10 @@ bing_word_counts %>%
 
 
 
-```{r fig.cap='word cloud'}
+```{r fig.cap='Word Cloud Graph'}
 library(wordcloud)
 
-tidy_books %>%
+engles_book %>%
   anti_join(stop_words) %>%
   count(word) %>%
   with(wordcloud(word, n, max.words = 100))
@@ -141,13 +140,34 @@ tidy_books %>%
 ```{r fig.cap="sentiment word cloud"}
 #
 library(reshape2)
-tidy_books %>%
+engles_book %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill = 0) %>%
   comparison.cloud(colors = c("red", "blue"),
-                   max.words = 100)
+                   max.words = 120)
 ```
+
+This is the part for extra credit:
+
+```{r}
+#another method for sentiment analysis
+FE<-tidy_books %>% 
+    inner_join(get_sentiments("loughran")) %>%
+    mutate(method = "Loughran-McDonald")  %>% 
+  count(method, index = linenumber %/% 80, sentiment) %>% 
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+FE%>%ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +labs(title='Loughran-McDonald')+
+  theme_bw()+theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
 
 
 ## TASK III
@@ -188,7 +208,7 @@ plot(uncombine(engles_result))
 
 ```{r}
 #Change from task two "divided by 80" to by chapters.
-new_bing<-tidy_books %>% 
+new_bing<-engles_book %>% 
     inner_join(get_sentiments("bing")) %>%
     mutate(method = "Bing et al.") %>%
     count(method, index = chapter, sentiment) %>%

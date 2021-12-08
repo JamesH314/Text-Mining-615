@@ -1,0 +1,81 @@
+---
+title: "MA615 Text Mining Task II Report"
+author: "Yifeng He"
+date: "2021/12/05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=F,message = F,echo=F,highlight=F)
+pacman::p_load(
+tidyverse,
+magrittr,
+knitr,
+gutenbergr,
+tidytext,
+sentimentr
+)
+```
+
+
+## TASK III
+
+### tnum
+
+First I put the book into the tnum database.
+	
+```{r}
+#upload the book
+# tnBooksFromLines(mybook$V2, "hvdsb/book4")
+```
+
+```{r}
+sb12<- tnum.query('hvdsb/book4/section# has text',max=8000) %>% tnum.objectsToDf()
+engles_sent<-sb12 %>% separate(col=subject,
+                  into = c("path1", "path2","section","paragraph","sentence"),
+                  sep = "/",
+                  fill = "right") %>%
+  select(section:string.value)
+
+#change the string values of 0001 to 1, to simple numeric values
+engles_sent<-engles_sent %>% mutate_at(c('section','paragraph','sentence'),~str_extract_all(.,"\\d+") %>% unlist() %>% as.numeric())
+
+#get from the sentimentr github
+engles_result<-engles_sent %>% dplyr::mutate(sentence_split = get_sentences(string.value))%$%
+    sentiment_by(sentence_split, list(section))
+
+#the sentiment analysis graph of the the book rank from high to low
+plot(engles_result)
+
+#the emotional curve for the book
+plot(uncombine(engles_result))
+```
+
+### Comparison with TASK II
+
+
+```{r}
+#Change from task two "divided by 80" to by chapters.
+new_bing<-engles_book %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al.") %>%
+    count(method, index = chapter, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% mutate(sentiment = positive - negative)
+
+
+#standardize the scale of sentiment for task 2 and task 3 for comparison
+bing2_rep<-new_bing %>% mutate(engles_scale=scale(sentiment)) %>% select(method,index,engles_scale)
+colnames(bing2_rep)[2]='section'
+
+engles_result<-engles_result %>% mutate(sentimentr_scale=scale(ave_sentiment))
+
+#join together two tasks into one data frame
+engles_res_2<-left_join(engles_result,bing2_rep,by='section')%>% select(section,engles_scale,sentimentr_scale)
+engles_res_plot<-engles_res_2 %>% pivot_longer(cols=c('sentimentr_scale','engles_scale'),names_to = 'sentiment')
+
+#the graph for comparison
+engles_res_plot %>%ggplot(aes(y=value,x=factor(section))) +
+  geom_bar(aes(fill=factor(sentiment)),stat='identity',position = "dodge",width = 0.7)+theme_bw()
+
+```
+
