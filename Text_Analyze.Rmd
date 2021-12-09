@@ -1,7 +1,7 @@
 ---
 title: "MA615 Text Mining Task II Report"
 author: "Yifeng He"
-date: "2021/12/07"
+date: "2021/12/08"
 output: pdf_document
 ---
 
@@ -170,7 +170,8 @@ FE%>%ggplot(aes(index, sentiment, fill = method)) +
   theme_bw()+theme(plot.title = element_text(hjust = 0.5))
 ```
 
+### Citation for Extra Credit
 
-
+Developed by Emil Hvitfeldt, emilhvitfeldt.github (online).  Available from: https://emilhvitfeldt.github.io/textdata/reference/lexicon_loughran.html [Accessed Dec 8 2021]
 
 
